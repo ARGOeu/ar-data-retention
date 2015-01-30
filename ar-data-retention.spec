@@ -1,6 +1,6 @@
 Name: ar-data-retention
 Summary: A/R data retention scripts
-Version: 1.0.0
+Version: 1.0.1
 Release: 1%{?dist}
 License: ASL 2.0
 Buildroot: %{_tmppath}/%{name}-buildroot
@@ -38,5 +38,7 @@ install --mode 644 cronjobs/ar-data-retention %{buildroot}/etc/cron.d/ar-data-re
 %attr(0644,root,root) /etc/cron.d/ar-data-retention
 
 %changelog
+* Thu Jan 29 2015 Luko Gjenero <lgjenero@gmail.com> - 1.0.2-1%{?dist}
+- Added file removal
 * Thu Aug 29 2013 Luko Gjenero <lgjenero@srce.hr> - 1.0.0-1%{?dist}
 - Initial release
