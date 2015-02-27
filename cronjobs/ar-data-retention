@@ -1,0 +1,1 @@
+30 0 * * * root /usr/libexec/ar-data-retention/ar-data-retention
