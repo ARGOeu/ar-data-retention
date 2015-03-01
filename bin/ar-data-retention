@@ -77,11 +77,11 @@ def loadConfiguration():
 				hiveServerPort = config.get('hive', 'hiveServerPort')
 			if config.has_option('hive', 'hiveTables'):
 				hiveTables = config.get('hive', 'hiveTables')
-			if config.has_option('mongo', 'hiveDateFields'):
+			if config.has_option('hive', 'hiveDateFields'):
 				hiveDateFields = config.get('hive', 'hiveDateFields')
-			if config.has_option('mongo', 'hiveDateFormat'):
+			if config.has_option('hive', 'hiveDateFormat'):
 				hiveDateFormat = config.get('hive', 'hiveDateFormat')
-			if config.has_option('mongo', 'hiveRetentionInDays'):
+			if config.has_option('hive', 'hiveRetentionInDays'):
 				hiveRetentionInDays = config.get('hive', 'hiveRetentionInDays')
 
 		if config.has_section('mongo'):
