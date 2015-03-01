@@ -104,7 +104,7 @@ def loadConfiguration():
 
 		if config.has_section('file'):
 			for option in config.options('file'):
-				print option
+#				print option
 				if option == 'fileretentionindays':
 					fileRetentionInDays = config.get('file', 'fileRetentionInDays')
 				else:
