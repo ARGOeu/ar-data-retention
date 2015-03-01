@@ -42,14 +42,14 @@ from pymongo import MongoClient
 defaultConfig = '/etc/ar-data-retention/ar-data-retention.conf'
 defaultArgDateFormat = "%Y-%m-%d"
 
-hiveServer = 'snf-84325.vm.okeanos.grnet.gr'
+hiveServer = 'hivehost'
 hiveServerPort = 9083
 hiveTables = 'raw_data;sitereports;apireports;voreports;sfreports'
 hiveDateFields = 'dates;dates;dates;dates;dates'
 hiveDateFormat = '%Y%m%d'
 hiveRetentionInDays = 90
 
-mongoDBServer = '83.212.110.19'
+mongoDBServer = 'mongoDBhost'
 mongoDBServerPort = 27017
 mongoDBDatabase = 'AR'
 mongoDBTables = 'Recalculations;hepspec;hlps;sfreports;sites;timelines;voreports'
