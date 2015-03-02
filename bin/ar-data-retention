@@ -44,17 +44,17 @@ defaultArgDateFormat = "%Y-%m-%d"
 
 hiveServer = 'hivehost'
 hiveServerPort = 9083
-hiveTables = 'raw_data;sitereports;apireports;voreports;sfreports'
-hiveDateFields = 'dates;dates;dates;dates;dates'
+hiveTables = 'raw_data'
+hiveDateFields = 'dates'
 hiveDateFormat = '%Y%m%d'
 hiveRetentionInDays = 90
 
 mongoDBServer = 'mongoDBhost'
 mongoDBServerPort = 27017
 mongoDBDatabase = 'AR'
-mongoDBTables = 'Recalculations;hepspec;hlps;sfreports;sites;timelines;voreports'
-mongoDBDateFields = 'dates;dates;dates;dt;dt;d;d'
-mongoDBDateFieldTypes = 'date;string;string;string;int;string;int'
+mongoDBTables = 'sites;sfreports;status_endpoints;status_metric;status_services;status_sites'
+mongoDBDateFields = 'dt;dt;di;di;di;di'
+mongoDBDateFieldTypes = 'int;int;int;int;int;int'
 mongoDBDateFormat = '%Y%m%d'
 mongoDBRetentionInDays = 90
 
@@ -64,7 +64,7 @@ fileRetentionInDays = 60
 def loadConfiguration():
 	#load config
 	global hiveServer,hiveServerPort,hiveTables,hiveDateFields,hiveDateFormat,hiveRetentionInDays
-	global mongoDBServer,mongoDBServerPort,mongoDBTables,mongoDBDateFields,mongoDBDateFormat,mongoDBRetentionInDays
+	global mongoDBServer,mongoDBServerPort,mongoDBTables,mongoDBDateFields,mongoDBDateFieldTypes,mongoDBDateFormat,mongoDBRetentionInDays
 	global fileRetentionInDays
 	configFile = None
 	if os.path.isfile(defaultConfig):
@@ -129,7 +129,7 @@ if argsOk:
 # HIVE 
 
 if not argsOk:
-	limitDate = datetime.datetime.now() + datetime.timedelta(-hiveRetentionInDays)
+	limitDate = datetime.datetime.now() + datetime.timedelta(-int(hiveRetentionInDays))
 
 hiveTablesList = hiveTables.split(';')
 hiveDateFieldsList = hiveDateFields.split(';')
@@ -142,13 +142,13 @@ hiveDate = limitDate.strftime(hiveDateFormat)
 i = 0	 
 for table in hiveTablesList:
 	dateField = hiveDateFieldsList[i]
-	cmd = "alter table " + table + " drop partition (" + dateField + " < '" + hiveDate + "')"
+	cmd = "alter table " + table + " drop if exists partition (" + dateField + " < \\\"" + hiveDate + "\\\")"
 	print '%r\r\n' % cmd
 	#cmd = "select * from " + table + " where " + dateField + " < '" + hiveDate + "' limit 1"
 	#print "here as well"  
 	#print '%r\r\n' % cmd
 	try:
-		retcode = call("hive" + " -e \"" + cmd + "\"", shell=True)
+		retcode = call("su - hdfs -c \"hive -e '" + cmd + "'\"", shell=True)
 		#retcode = 1
 		if retcode < 0:
 			print >>sys.stderr, "Hive CMD was terminated by signal", -retcode
@@ -161,7 +161,7 @@ for table in hiveTablesList:
 # MongoDB
 
 if not argsOk:
-	limitDate = datetime.datetime.now() + datetime.timedelta(-mongoDBRetentionInDays)
+	limitDate = datetime.datetime.now() + datetime.timedelta(-int(mongoDBRetentionInDays))
 
 mongoDBTablesList = mongoDBTables.split(';')
 mongoDBDateFieldsList = mongoDBDateFields.split(';')
@@ -174,7 +174,7 @@ mongoDBDateInt = int(mongoDBDateStr)
 #print '%r\r\n' % mongoDBDateFieldsList
 #print '%r\r\n' % mongoDBDate
 
-mongoClient = MongoClient(mongoDBServer, mongoDBServerPort)
+mongoClient = MongoClient(mongoDBServer, int(mongoDBServerPort))
 mongoDB = mongoClient[mongoDBDatabase]
 i = 0
 for table in mongoDBTablesList:
@@ -203,7 +203,7 @@ for table in mongoDBTablesList:
 print fileTemplates
 
 if not argsOk:
-	limitDate = datetime.datetime.now() + datetime.timedelta(-fileRetentionInDays)
+	limitDate = datetime.datetime.now() + datetime.timedelta(-int(fileRetentionInDays))
 
 while True:
 	foundFiles = False
