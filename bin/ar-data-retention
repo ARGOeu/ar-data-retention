@@ -129,7 +129,7 @@ if argsOk:
 # HIVE 
 
 if not argsOk:
-	limitDate = datetime.datetime.now() + datetime.timedelta(-hiveRetentionInDays)
+	limitDate = datetime.datetime.now() + datetime.timedelta(-int(hiveRetentionInDays))
 
 hiveTablesList = hiveTables.split(';')
 hiveDateFieldsList = hiveDateFields.split(';')
