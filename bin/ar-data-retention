@@ -174,7 +174,7 @@ mongoDBDateInt = int(mongoDBDateStr)
 #print '%r\r\n' % mongoDBDateFieldsList
 #print '%r\r\n' % mongoDBDate
 
-mongoClient = MongoClient(mongoDBServer, mongoDBServerPort)
+mongoClient = MongoClient(mongoDBServer, int(mongoDBServerPort))
 mongoDB = mongoClient[mongoDBDatabase]
 i = 0
 for table in mongoDBTablesList:
