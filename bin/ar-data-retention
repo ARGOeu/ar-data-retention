@@ -203,7 +203,7 @@ for table in mongoDBTablesList:
 print fileTemplates
 
 if not argsOk:
-	limitDate = datetime.datetime.now() + datetime.timedelta(-fileRetentionInDays)
+	limitDate = datetime.datetime.now() + datetime.timedelta(-int(fileRetentionInDays))
 
 while True:
 	foundFiles = False
