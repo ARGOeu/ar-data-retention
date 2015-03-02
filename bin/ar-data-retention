@@ -142,13 +142,13 @@ hiveDate = limitDate.strftime(hiveDateFormat)
 i = 0	 
 for table in hiveTablesList:
 	dateField = hiveDateFieldsList[i]
-	cmd = "alter table " + table + " drop partition (" + dateField + " < '" + hiveDate + "')"
+	cmd = "alter table " + table + " drop if exists partition (" + dateField + " < \\\"" + hiveDate + "\\\")"
 	print '%r\r\n' % cmd
 	#cmd = "select * from " + table + " where " + dateField + " < '" + hiveDate + "' limit 1"
 	#print "here as well"  
 	#print '%r\r\n' % cmd
 	try:
-		retcode = call("hive" + " -e \"" + cmd + "\"", shell=True)
+		retcode = call("su - hdfs -c \"hive -e '" + cmd + "'\"", shell=True)
 		#retcode = 1
 		if retcode < 0:
 			print >>sys.stderr, "Hive CMD was terminated by signal", -retcode
