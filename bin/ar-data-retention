@@ -161,7 +161,7 @@ for table in hiveTablesList:
 # MongoDB
 
 if not argsOk:
-	limitDate = datetime.datetime.now() + datetime.timedelta(-mongoDBRetentionInDays)
+	limitDate = datetime.datetime.now() + datetime.timedelta(-int(mongoDBRetentionInDays))
 
 mongoDBTablesList = mongoDBTables.split(';')
 mongoDBDateFieldsList = mongoDBDateFields.split(';')
