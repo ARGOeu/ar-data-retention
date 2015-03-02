@@ -52,9 +52,9 @@ hiveRetentionInDays = 90
 mongoDBServer = 'mongoDBhost'
 mongoDBServerPort = 27017
 mongoDBDatabase = 'AR'
-mongoDBTables = 'recalculations;hepspec;hlps;sfreports;sites;timelines;voreports'
-mongoDBDateFields = 'dates;dates;dates;dt;dt;d;d'
-mongoDBDateFieldTypes = 'date;string;string;string;int;string;int'
+mongoDBTables = 'sites;sfreports;status_endpoints;status_metric;status_services;status_sites'
+mongoDBDateFields = 'dt;dt;di;di;di;di'
+mongoDBDateFieldTypes = 'int;int;int;int;int;int'
 mongoDBDateFormat = '%Y%m%d'
 mongoDBRetentionInDays = 90
 
