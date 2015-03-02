@@ -64,7 +64,7 @@ fileRetentionInDays = 60
 def loadConfiguration():
 	#load config
 	global hiveServer,hiveServerPort,hiveTables,hiveDateFields,hiveDateFormat,hiveRetentionInDays
-	global mongoDBServer,mongoDBServerPort,mongoDBTables,mongoDBDateFields,mongoDBDateFormat,mongoDBRetentionInDays
+	global mongoDBServer,mongoDBServerPort,mongoDBTables,mongoDBDateFields,mongoDBDateFieldTypes,mongoDBDateFormat,mongoDBRetentionInDays
 	global fileRetentionInDays
 	configFile = None
 	if os.path.isfile(defaultConfig):
