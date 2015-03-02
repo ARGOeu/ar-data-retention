@@ -44,8 +44,8 @@ defaultArgDateFormat = "%Y-%m-%d"
 
 hiveServer = 'hivehost'
 hiveServerPort = 9083
-hiveTables = 'raw_data;sitereports;apireports;voreports;sfreports'
-hiveDateFields = 'dates;dates;dates;dates;dates'
+hiveTables = 'raw_data'
+hiveDateFields = 'dates'
 hiveDateFormat = '%Y%m%d'
 hiveRetentionInDays = 90
 
