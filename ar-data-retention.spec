@@ -1,7 +1,7 @@
 Name: ar-data-retention
 Summary: A/R data retention scripts
 Version: 1.0.2
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: ASL 2.0
 Buildroot: %{_tmppath}/%{name}-buildroot
 Group:     EGI/SA4
