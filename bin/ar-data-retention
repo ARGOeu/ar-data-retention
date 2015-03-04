@@ -30,6 +30,7 @@ import datetime
 import xml.dom.minidom
 import httplib
 import sys
+import ConfigParser
 
 # HIVE
 from subprocess import call
@@ -38,94 +39,70 @@ from subprocess import call
 from pymongo import MongoClient
 
 # DEFAULTS
-defaultConfig = '/etc/ar-data-retention/data-retention.conf'
+defaultConfig = '/etc/ar-data-retention/ar-data-retention.conf'
 defaultArgDateFormat = "%Y-%m-%d"
 
-retentionInDays = 90
-
-hiveServer = 'snf-84325.vm.okeanos.grnet.gr'
-hiveServerPort = 9083
-hiveTables = 'raw_data;sitereports;apireports;voreports;sfreports'
-#hiveTables = 'sitereports;apireports;voreports;sfreports'
-hiveDateFields = 'dates;dates;dates;dates;dates'
+hiveTables = 'raw_data'
+hiveDateFields = 'dates'
 hiveDateFormat = '%Y%m%d'
+hiveRetentionInDays = 90
 
-mongoDBServer = '83.212.110.19'
+mongoDBServer = 'mongoDBhost'
 mongoDBServerPort = 27017
 mongoDBDatabase = 'AR'
-mongoDBTables = 'Recalculations;hepspec;hlps;sfreports;sites;timelines;voreports'
-mongoDBDateFields = 'dates;dates;dates;dt;dt;d;d'
-mongoDBDateFieldTypes = 'date;string;string;string;int;string;int'
+mongoDBTables = 'sites;sfreports;status_endpoints;status_metric;status_services;status_sites'
+mongoDBDateFields = 'dt;dt;di;di;di;di'
+mongoDBDateFieldTypes = 'int;int;int;int;int;int'
 mongoDBDateFormat = '%Y%m%d'
+mongoDBRetentionInDays = 90
+
+fileTemplates = []
+fileRetentionInDays = 60
 
 def loadConfiguration():
-     #load config
-     configFile = None
-     configFields = dict()
-     if os.path.isfile(defaultConfig):
-         configFile = open(defaultConfig, 'r')
-         lines = configFile.readlines()
+	#load config
+	global hiveTables,hiveDateFields,hiveDateFormat,hiveRetentionInDays
+	global mongoDBServer,mongoDBServerPort,mongoDBTables,mongoDBDateFields,mongoDBDateFieldTypes,mongoDBDateFormat,mongoDBRetentionInDays
+	global fileRetentionInDays
+	configFile = None
+	if os.path.isfile(defaultConfig):
+		configFile = open(defaultConfig, 'r')
+		config = ConfigParser.ConfigParser()
+		config.readfp(configFile)
 
-         for line in lines:
-             if line[0] == '#':
-                 continue
-             splitLine = line.split('=')
-             if len(splitLine) > 1:
-                 key = splitLine[0].strip()
-                 value = splitLine[1].strip()
-                 value = value.decode('string_escape')
-                 if value[0] == "'":
-                     if value [-1] == "'":
-                         value = value[1:-1]
-                     else:
-                         continue
-                 elif value[0] == '"':
-                     if value [-1] == '"':
-                         value = value[1:-1]
-                     else:
-                         continue
-                 else:
-                     value = int(value)
-                 configFields[key] = value
+		if config.has_section('hive'):
+			if config.has_option('hive', 'hiveTables'):
+				hiveTables = config.get('hive', 'hiveTables')
+			if config.has_option('hive', 'hiveDateFields'):
+				hiveDateFields = config.get('hive', 'hiveDateFields')
+			if config.has_option('hive', 'hiveDateFormat'):
+				hiveDateFormat = config.get('hive', 'hiveDateFormat')
+			if config.has_option('hive', 'hiveRetentionInDays'):
+				hiveRetentionInDays = config.get('hive', 'hiveRetentionInDays')
 
-         configFile.close()
+		if config.has_section('mongo'):
+			if config.has_option('mongo', 'mongoDBServer'):
+				mongoDBServer = config.get('mongo', 'mongoDBServer')
+			if config.has_option('mongo', 'mongoDBServerPort'):
+				mongoDBServerPort = config.get('mongo', 'mongoDBServerPort')
+			if config.has_option('mongo', 'mongoDBTables'):
+ 				mongoDBTables = config.get('mongo', 'mongoDBTables')
+			if config.has_option('mongo', 'mongoDBDateFields'):
+				mongoDBDateFields = config.get('mongo', 'mongoDBDateFields')
+			if config.has_option('mongo', 'mongoDBDateFieldTypes'):
+				mongoDBDateFieldTypes = config.get('mongo', 'mongoDBDateFieldTypes')
+			if config.has_option('mongo', 'mongoDBDateFormat'):
+				mongoDBDateFormat = config.get('mongo', 'mongoDBDateFormat')
+			if config.has_option('mongo', 'mongoDBRetentionInDays'):
+				mongoDBRetentionInDays = config.get('mongo', 'mongoDBRetentionInDays')
 
-	 if 'retentionInDays' in configFields:
-             retentionInDays = configFields['retentionInDays']
-
-         if 'hiveServer' in configFields:
-             hiveServer = configFields['hiveServer']
-
-         if 'hiveServerPort' in configFields:
-             hiveServerPort = configFields['hiveServerPort']
-
-         if 'hiveTables' in configFields:
-             hiveTables = configFields['hiveTables']
-
-         if 'hiveDateFields' in configFields:
-             hiveDateFields = configFields['hiveDateFields']
-
-         if 'hiveDateFormat' in configFields:
-             hiveDateFormat = configFields['hiveDateFormat']
-
-         if 'mongoDBServer' in configFields:
-             mongoDBServer = configFields['hiveServer']
-
-         if 'mongoDBServerPort' in configFields:
-             mongoDBServerPort = configFields['mongoDBServerPort']
-
-         if 'mongoDBTables' in configFields:
-             mongoDBTables = configFields['mongoDBTables']
-
-         if 'mongoDBDateFields' in configFields:
-             mongoDBDateFields = configFields['mongoDBDateFields']
-
-	 if 'mongoDBDateFieldTypes' in configFields:
-             mongoDBDateFieldTypes = configFields['mongoDBDateFieldTypes']
-
-         if 'mongoDBDateFormat' in configFields:
-             mongoDBDateFormat = configFields['mongoDBDateFormat']
-
+		if config.has_section('file'):
+			for option in config.options('file'):
+#				print option
+				if option == 'fileretentionindays':
+					fileRetentionInDays = config.get('file', 'fileRetentionInDays')
+				else:
+					fileTemplates.append(config.get('file', option))
 
 ##############################
 # main
@@ -133,19 +110,21 @@ def loadConfiguration():
 
 argsOk = False
 for i in range(0,len(sys.argv)-1):
-        if sys.argv[i] == '-d':
-                if len(sys.argv[i+1].split('-')) == 3:
-                        date = sys.argv[i+1]
-                        argsOk = True
+	if sys.argv[i] == '-d':
+		if len(sys.argv[i+1].split('-')) == 3:
+			date = sys.argv[i+1]
+			argsOk = True
 
 loadConfiguration()
 
-if not argsOk:
-	limitDate = datetime.datetime.now() + datetime.timedelta(-retentionInDays)
-else:
+if argsOk:
 	limitDate = datetime.datetime.strptime(date, defaultArgDateFormat)
 
 # HIVE 
+
+if not argsOk:
+	limitDate = datetime.datetime.now() + datetime.timedelta(-int(hiveRetentionInDays))
+
 hiveTablesList = hiveTables.split(';')
 hiveDateFieldsList = hiveDateFields.split(';')
 hiveDate = limitDate.strftime(hiveDateFormat)
@@ -154,24 +133,30 @@ hiveDate = limitDate.strftime(hiveDateFormat)
 #print '%r\r\n' % hiveDateFieldsList
 #print '%r\r\n' % hiveDate
 
-i = 0    
+i = 0	 
 for table in hiveTablesList:
-        dateField = hiveDateFieldsList[i]
-        cmd = "alter table " + table + " drop partition (" + dateField + " < '" + hiveDate + "')"
-        #print '%r\r\n' % cmd
-        #cmd = "select * from " + table + " where " + dateField + " < '" + hiveDate + "' limit 1"
-        #print '%r\r\n' % cmd
-        try:
-                retcode = call("hive" + " -e \"" + cmd + "\"", shell=True)
-                if retcode < 0:
-                        print >>sys.stderr, "Hive CMD was terminated by signal", -retcode
+	dateField = hiveDateFieldsList[i]
+	cmd = "alter table " + table + " drop if exists partition (" + dateField + " < \\\"" + hiveDate + "\\\")"
+	print '%r\r\n' % cmd
+	#cmd = "select * from " + table + " where " + dateField + " < '" + hiveDate + "' limit 1"
+	#print "here as well"  
+	#print '%r\r\n' % cmd
+	try:
+		retcode = call("su - hdfs -c \"hive -e '" + cmd + "'\"", shell=True)
+		#retcode = 1
+		if retcode < 0:
+			print >>sys.stderr, "Hive CMD was terminated by signal", -retcode
 		else:
 			print >>sys.stderr, "Hive CMD returned", retcode
 	except OSError as e:
 		print >>sys.stderr, "Hive failed:", e
-        i = i+1
+	i = i+1
 
 # MongoDB
+
+if not argsOk:
+	limitDate = datetime.datetime.now() + datetime.timedelta(-int(mongoDBRetentionInDays))
+
 mongoDBTablesList = mongoDBTables.split(';')
 mongoDBDateFieldsList = mongoDBDateFields.split(';')
 mongoDBDateFieldTypesList = mongoDBDateFieldTypes.split(';')
@@ -183,29 +168,47 @@ mongoDBDateInt = int(mongoDBDateStr)
 #print '%r\r\n' % mongoDBDateFieldsList
 #print '%r\r\n' % mongoDBDate
 
-mongoClient = MongoClient(mongoDBServer, mongoDBServerPort)
+mongoClient = MongoClient(mongoDBServer, int(mongoDBServerPort))
 mongoDB = mongoClient[mongoDBDatabase]
 i = 0
 for table in mongoDBTablesList:
-        dateField = mongoDBDateFieldsList[i]
-        fieldType = mongoDBDateFieldTypesList[i]
-        mongoTable = mongoDB[table]
-        i = i+1
+	dateField = mongoDBDateFieldsList[i]
+	fieldType = mongoDBDateFieldTypesList[i]
+	mongoTable = mongoDB[table]
+	i = i+1
 
 	if fieldType == 'int':
-                mongoTable.remove( { dateField : { "$lt": mongoDBDateInt } } )
+		mongoTable.remove( { dateField : { "$lt": mongoDBDateInt } } )
 		#print '%r\r\n' % mongoTable.find_one( { dateField : { "$lt": mongoDBDateInt } } )
 	elif fieldType == 'string':
-                mongoTable.remove( { dateField : { "$lt": mongoDBDateStr } } )
-        	#print '%r\r\n' % mongoTable.find_one( { dateField : { "$lt": mongoDBDateStr } } )
+		mongoTable.remove( { dateField : { "$lt": mongoDBDateStr } } )
+		#print '%r\r\n' % mongoTable.find_one( { dateField : { "$lt": mongoDBDateStr } } )
 	elif fieldType == 'date':
-                mongoTable.remove( { dateField : { "$lt": mongoDBDate } } )
-                #print '%r\r\n' % mongoTable.find_one( { dateField : { "$lt": mongoDBDate } } )
-        elif fieldType == 'all':
-                mongoTable.remove( )
-                #print '%r\r\n' % mongoTable.find_one( )
+		mongoTable.remove( { dateField : { "$lt": mongoDBDate } } )
+		#print '%r\r\n' % mongoTable.find_one( { dateField : { "$lt": mongoDBDate } } )
+	elif fieldType == 'all':
+		mongoTable.remove( )
+		#print '%r\r\n' % mongoTable.find_one( )
 	
 	#print '%r\r\n' % mongoTable.find_one()
 
+# REMOVE FILES
+
+print fileTemplates
+
+if not argsOk:
+	limitDate = datetime.datetime.now() + datetime.timedelta(-int(fileRetentionInDays))
+
+while True:
+	foundFiles = False
+	limitDate = limitDate + datetime.timedelta(-1)
+	for fileTemplate in fileTemplates:
+		fileName = limitDate.strftime(fileTemplate)
+		print fileName
+		if os.path.isfile(fileName):
+			foundFiles = True
+			os.remove(fileName)
+	if not foundFiles:
+		break
 
 

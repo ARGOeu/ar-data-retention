@@ -1,7 +1,7 @@
 Name: ar-data-retention
 Summary: A/R data retention scripts
-Version: 1.0.0
-Release: 1%{?dist}
+Version: 1.0.2
+Release: 4%{?dist}
 License: ASL 2.0
 Buildroot: %{_tmppath}/%{name}-buildroot
 Group:     EGI/SA4
@@ -38,5 +38,18 @@ install --mode 644 cronjobs/ar-data-retention %{buildroot}/etc/cron.d/ar-data-re
 %attr(0644,root,root) /etc/cron.d/ar-data-retention
 
 %changelog
+* Mon Mar 2 2015 Paschalis Korosoglou <pkoro@grid.auth.gr> - 1.0.2-3%{?dist}
+- Corrections in paths for consumer and sync data
+- Mongo tables we need to apply retention to
+- Drop hive partitions using hdfs user
+- Leave only tables that exist on Hive in configuration
+- Minor fixes
+* Sun Mar 1 2015 Paschalis Korosoglou <pkoro@grid.auth.gr> - 1.0.2-2%{?dist}
+- Minor modifications and typos
+- Raised retention in days too extremely high value only for initial deployment/testing purposes
+- Generic hostnames in configuration file and main script
+- Quick fix to have function loadConfiguration overwrite globally assigned values
+* Thu Jan 29 2015 Luko Gjenero <lgjenero@gmail.com> - 1.0.2-1%{?dist}
+- Added file removal
 * Thu Aug 29 2013 Luko Gjenero <lgjenero@srce.hr> - 1.0.0-1%{?dist}
 - Initial release
